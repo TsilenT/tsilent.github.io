@@ -3,11 +3,98 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="stevets">
+  <meta name="description" content="Steve Tsai — software engineer">
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
-  <title>Hello World</title>
+  <title>Steve Tsai</title>
+  <style>
+    :root {
+      --bg: #0d0d0d;
+      --fg: #e6e6e6;
+      --dim: #888;
+      --accent: #4ade80;
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: var(--bg);
+      color: var(--fg);
+      font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+      font-size: 16px;
+      line-height: 1.6;
+    }
+    main {
+      max-width: 640px;
+      margin: 0 auto;
+      padding: 6rem 1.5rem 4rem;
+    }
+    h1 {
+      font-size: 2rem;
+      margin: 0 0 0.25rem;
+      color: var(--accent);
+      font-weight: 600;
+    }
+    .tagline {
+      color: var(--dim);
+      margin: 0 0 2.5rem;
+    }
+    h2 {
+      font-size: 1rem;
+      color: var(--accent);
+      font-weight: 600;
+      margin: 2.5rem 0 0.75rem;
+      text-transform: lowercase;
+    }
+    p { margin: 0 0 1rem; }
+    ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    li {
+      margin: 0.25rem 0;
+    }
+    a {
+      color: var(--fg);
+      text-decoration: underline;
+      text-decoration-color: var(--dim);
+      text-underline-offset: 3px;
+    }
+    a:hover {
+      color: var(--accent);
+      text-decoration-color: var(--accent);
+    }
+    .arrow { color: var(--dim); margin: 0 0.5rem; }
+    footer {
+      color: var(--dim);
+      font-size: 0.85rem;
+      margin-top: 4rem;
+    }
+  </style>
 </head>
 <body>
-  <h1>Hello World</h1>
+  <main>
+    <h1>Steve Tsai</h1>
+    <p class="tagline">software engineer</p>
+
+    <p>Short bio goes here — a sentence or two about what you do and where.</p>
+
+    <h2>now</h2>
+    <ul>
+      <li>working on …</li>
+      <li>reading …</li>
+      <li>thinking about …</li>
+    </ul>
+
+    <h2>links</h2>
+    <ul>
+      <li>github <span class="arrow">→</span> <a href="https://github.com/TsilenT">github.com/TsilenT</a></li>
+      <li>linkedin <span class="arrow">→</span> <a href="#">linkedin.com/in/…</a></li>
+      <li>x <span class="arrow">→</span> <a href="#">x.com/…</a></li>
+      <li>email <span class="arrow">→</span> <a href="mailto:hello@stevets.ai">hello@stevets.ai</a></li>
+    </ul>
+
+    <footer>last updated 2026-05-16</footer>
+  </main>
 </body>
 </html>
