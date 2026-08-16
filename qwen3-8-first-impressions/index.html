@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="First impressions of Qwen3.8-27B as a local coding agent: building and shipping an interactive Three.js demo under supervision.">
+  <meta property="og:title" content="Qwen3.8-27B first impressions">
+  <meta property="og:description" content="What happened when I gave a local 27B model a Three.js demo, a domain, and a supervisor.">
+  <meta property="og:image" content="https://stevets.ai/qwen3-8-first-impressions/assets/04-final-desktop.webp">
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+  <link rel="stylesheet" href="../style.css">
+  <title>Qwen3.8-27B first impressions — Steve Tsai</title>
+</head>
+<body>
+  <main class="article">
+    <nav><a href="../">← stevets.ai</a></nav>
+
+    <h1>Qwen3.8-27B's first shift in the workshop</h1>
+    <p class="tagline">I asked a local model to invent, build, test, and ship a Three.js demo. It was impressive, fragile, and much more interesting than a clean benchmark score.</p>
+    <p class="date">2026-08-16</p>
+
+    <figure class="hero">
+      <a href="https://qwen38demo.stevets.ai"><img src="assets/04-final-desktop.webp" alt="Final Aurora Shard Basin demo: a circular field of blue, cyan, and violet crystalline shards against a dark star field"></a>
+      <figcaption>The finished <a href="https://qwen38demo.stevets.ai">Aurora Shard Basin</a>. Qwen chose the concept and generated most of the implementation.</figcaption>
+    </figure>
+
+    <p>I recently put Qwen3.8-27B on my RTX 5090 and gave it a Discord identity named Big Al. For its first real showcase, I asked Clank—my smarter Hermes profile—to supervise Big Al while he made something for <a href="https://qwen38demo.stevets.ai">qwen38demo.stevets.ai</a>.</p>
+
+    <p>The assignment was deliberately open: make a game, animation, or simulation in Three.js, as long as it looked good quickly and rewarded interaction. I wanted to see how much of the process a local 27B model could own without letting it quietly rearrange the workshop.</p>
+
+    <h2>the brief</h2>
+
+    <p>The first prompt asked for one original procedural concept—no spinning cube, no template portfolio, no pile of downloaded assets. Big Al proposed <strong>Aurora Shard Basin</strong>: thousands of luminous mineral shards moving like a living tide. Touching the basin sends a ripple through it; holding grows a bloom that raises nearby shards.</p>
+
+    <pre><code>Build a polished Vite + TypeScript + Three.js demo.
+Work only in /home/stevets/projects/qwen38demo.
+No sudo, GitHub, deploy, DNS, credentials, or persistent services.
+Support desktop/mobile, reduced motion, WebGL fallback,
+hidden-tab pause, offline runtime, tests, typecheck, and build.
+Stop after a verified local handoff.</code></pre>
+
+    <p>That local-only boundary mattered. Deployment was a separate phase, and Big Al never received permission to touch it until the artifact had passed review.</p>
+
+    <h2>the first surprise: thinking mode did not know when to stop</h2>
+
+    <p>The normal Hermes agent run never reached its first tool call. Qwen generated roughly 12,000 hidden reasoning tokens while the project directory still did not exist. I killed the run and tried again with less profile context, lower reasoning effort, required tool use, and even an explicit <code>/no_think</code>. Later attempts crossed 16,000 and 20,000 generated tokens without touching a file.</p>
+
+    <p>This did not look like useful incremental agent work. The model appeared to be solving an imaginary version of the entire project internally before allowing itself to inspect the environment. Some direct API trials ended with <code>finish_reason: length</code>, empty visible output, and no tool call.</p>
+
+    <p>The switch that changed everything was at the llama.cpp chat-template layer:</p>
+
+    <pre><code>"chat_template_kwargs": {
+  "enable_thinking": false
+}</code></pre>
+
+    <p>With thinking disabled there—not merely requested in the prompt—Qwen became fast and practical. It produced focused code in seconds instead of privately composing an epic about <code>package.json</code>.</p>
+
+    <h2>what Qwen built</h2>
+
+    <p>Big Al generated a compact Vite/TypeScript project with Three.js, one instanced shard mesh, deterministic simulation helpers, pointer and touch interaction, reduced-motion handling, visibility suspension, WebGL fallback, and a dark glassy HUD. It also wrote a README and tests.</p>
+
+    <p>The raw visual idea was good. Even the first capture clearly looked like a place rather than a graphics tutorial:</p>
+
+    <div class="figure-grid">
+      <figure>
+        <img src="assets/01-first-desktop.webp" alt="Early desktop screenshot of Aurora Shard Basin with a very dark blue shard field">
+        <figcaption>First desktop pass: coherent composition, but much too dark.</figcaption>
+      </figure>
+      <figure>
+        <img src="assets/02-first-mobile.webp" alt="Early mobile screenshot with the shard basin tightly cropped and no visible footer">
+        <figcaption>First mobile pass: the camera was buried in the shard forest.</figcaption>
+      </figure>
+    </div>
+
+    <h2>the review was not ceremonial</h2>
+
+    <p>The first automated run failed 9 of 20 tests. The tests and implementation had been generated separately, and the test file invented exports and properties that did not exist. It reversed the <code>smoothstep</code> arguments, expected imaginary ripple fields, and called functions with incompatible signatures. <code>main.ts</code> made similar mistakes.</p>
+
+    <p>A focused repair prompt brought the code to 17 passing tests, a clean TypeScript check, and a successful production build. It still left a subtle interaction bug: the bloom multiplied two ramps together, so it remained exactly zero until the pointer had been held for two seconds. Clank corrected the equation and added coverage.</p>
+
+    <p>There were other very model-shaped misses:</p>
+
+    <ul class="bullets">
+      <li>One constrained HTML request returned prose and literal pseudo-tool calls instead of HTML. Vite happily built that one-module “site,” which is why checking bundle contents mattered.</li>
+      <li>The CSS described classes that the HTML never used, so the credit footer existed but remained unstyled and invisible.</li>
+      <li>The first visual correction brightened the shards and fixed mobile framing, but interaction QA showed the held bloom lifting almost the entire basin instead of a local area.</li>
+      <li>The deployment handoff suggested adding the React Vite plugin to a vanilla Three.js project.</li>
+      <li>It also proposed GitHub Action majors that were already stale. GitHub emitted deprecation warnings until Clank checked current releases and updated them.</li>
+    </ul>
+
+    <figure>
+      <img src="assets/03-global-bloom.webp" alt="Interaction test where almost every shard in the basin rises together instead of a localized bloom">
+      <figcaption>A real pointer-hold capture caught a bloom with a ten-unit radius—effectively the whole ten-unit basin. The deterministic tests passed; the picture still showed the mistake.</figcaption>
+    </figure>
+
+    <h2>what supervision actually meant</h2>
+
+    <p>Big Al chose the concept, wrote most of the scene, simulation, styling, tests, documentation, and the first deployment plan. Clank supplied the boundaries and acceptance gates, stopped runaway generations, found the serving flag, executed the generated files, returned concrete failures, made small surgical corrections, and independently verified every stage.</p>
+
+    <p>The verification stack ended up being more important than any individual prompt:</p>
+
+    <ul class="bullets">
+      <li><strong>17 deterministic tests</strong> for ripple and bloom behavior.</li>
+      <li><strong>TypeScript typecheck</strong> and a real Vite production build.</li>
+      <li><strong>Desktop and mobile captures</strong> using explicit Chrome DevTools Protocol viewport metrics.</li>
+      <li><strong>Pointer interaction capture</strong>, not just an idle screenshot.</li>
+      <li><strong>GitHub Actions deployment</strong> running tests, typecheck, and build again.</li>
+      <li><strong>Live HTTPS fetch and screenshots</strong> from the exact custom domain.</li>
+    </ul>
+
+    <div class="figure-grid">
+      <figure>
+        <img src="assets/04-final-desktop.webp" alt="Final desktop Aurora Shard Basin with a readable circular rim and luminous layered shards">
+        <figcaption>Final desktop capture from the live HTTPS site.</figcaption>
+      </figure>
+      <figure>
+        <img src="assets/05-final-mobile.webp" alt="Final mobile Aurora Shard Basin showing the full basin, compact HUD, and Big Al credit">
+        <figcaption>Final 390×844 capture. The CSS viewport and document width were both verified at 390 pixels.</figcaption>
+      </figure>
+    </div>
+
+    <h2>first impression</h2>
+
+    <p>Qwen3.8-27B is capable enough to be genuinely useful as a local creative coding model. The concept was strong, the visual implementation was recognizable immediately, and focused repair prompts worked well once thinking mode was disabled correctly. Running locally also made repeated generation inexpensive and fast.</p>
+
+    <p>It is not dependable enough to trust its own completion report. It confidently produced incompatible tests, malformed page content, an interaction that looked right in code but wrong on screen, and a deployment plan containing both a framework mismatch and stale dependencies. None of those required a rewrite. All of them required a supervisor that checked reality.</p>
+
+    <p>My current read is that the best role for this model is <strong>bounded implementer with strong feedback</strong>. Give it one artifact or one correction at a time, disable unproductive thinking for tool-heavy work, and put tests plus visual/runtime evidence between it and production. Under those conditions, a 27B model on one consumer GPU can do much more than draft snippets. It can ship something worth showing people.</p>
+
+    <p>Try the result: <a href="https://qwen38demo.stevets.ai">qwen38demo.stevets.ai</a><br>
+    Source: <a href="https://github.com/TsilenT/qwen38demo">github.com/TsilenT/qwen38demo</a><br>
+    Deployment run: <a href="https://github.com/TsilenT/qwen38demo/actions/runs/31957316506">GitHub Actions</a></p>
+
+    <footer>Written after the experiment on 2026-08-16. Screenshots are from the supervised local and live verification passes.</footer>
+  </main>
+</body>
+</html>
